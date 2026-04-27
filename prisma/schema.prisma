@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Curso {
+  id        String   @id @default(uuid())
+  nome      String
+  tipo      String
+  metaHoras Int
+  status    String   @default("Ativo")
+  createdAt DateTime @default(now())
+}
