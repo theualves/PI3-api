@@ -7,12 +7,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Usuario {
+  id String @id @default(uuid())
+  nome String
+  email String @unique
+  status String @default("Ativo")
+  createdAt DateTime @default(now())
+
+  cursoId   String?
+  curso     Curso?   @relation("UsuariosDoCurso", fields: [cursoId], references: [id])
+
+  cursosCoordenados Curso[] @relation("CoordenadorDoCurso")
+}
+
 model Curso {
   id        String   @id @default(uuid())
   nome      String
-  coordenador_responsavel String
   metaHoras Int
   qtdAlunos  Int
   status    String   @default("Ativo")
   createdAt DateTime @default(now())
+
+  coordenadorId String?
+  coordenador   Usuario? @relation("CoordenadorDoCurso", fields: [coordenadorId], references: [id])
+
+  usuarios Usuario[] @relation("UsuariosDoCurso")
 }
