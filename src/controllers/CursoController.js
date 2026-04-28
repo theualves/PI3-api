@@ -14,14 +14,15 @@ export const listarCursos = async (req, res) => {
 };
 
 export const criarCurso = async (req, res) => {
-  const { nome, tipo, horas, status } = req.body;
+  const { nome, coordenador_responsavel , metaHoras, qtdAlunos, status} = req.body;
   try {
     const novoCurso = await prisma.curso.create({
       data: {
         nome,
-        tipo,
-        metaHoras: parseInt(horas),
-        status
+        coordenador_responsavel,
+        metaHoras: parseInt(metaHoras),
+        qtdAlunos: parseInt(qtdAlunos),
+        status: status || "Ativo"
       },
     });
     res.status(201).json(novoCurso);

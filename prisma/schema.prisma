@@ -10,8 +10,9 @@ datasource db {
 model Curso {
   id        String   @id @default(uuid())
   nome      String
-  tipo      String
+  coordenador_responsavel String
   metaHoras Int
+  qtdAlunos  Int
   status    String   @default("Ativo")
   createdAt DateTime @default(now())
 }
