@@ -1,10 +1,13 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const listarCursos = async (req, res) => {
   try {
     const cursos = await prisma.curso.findMany({
-      orderBy: { createdAt: 'desc' } 
+      include: {
+        coordenador: true, // Isso faz o JOIN com a tabela Usuario
+      },
+      orderBy: { createdAt: "desc" },
     });
     res.json(cursos);
   } catch (error) {
@@ -14,7 +17,7 @@ export const listarCursos = async (req, res) => {
 };
 
 export const criarCurso = async (req, res) => {
-  const { nome, metaHoras, qtdAlunos, status, coordenadorId} = req.body;
+  const { nome, metaHoras, qtdAlunos, status, coordenadorId } = req.body;
   try {
     const novoCurso = await prisma.curso.create({
       data: {
@@ -22,34 +25,38 @@ export const criarCurso = async (req, res) => {
         metaHoras: parseInt(metaHoras),
         qtdAlunos: parseInt(qtdAlunos),
         status: status || "Ativo",
-        coordenadorId: coordenadorId || null
+        coordenadorId: coordenadorId || null,
       },
     });
     res.status(201).json(novoCurso);
   } catch (error) {
-    console.error(error); 
+    console.error(error);
     res.status(500).json({ error: "Erro ao salvar no banco." });
   }
 };
 
 export const editarCurso = async (req, res) => {
-  const { id } = req.params; 
+  const { id } = req.params;
   const { nome, metaHoras, qtdAlunos, status, coordenadorId } = req.body;
   try {
     const cursoAtualizado = await prisma.curso.update({
-      where: { id: id }, 
+      where: { id: id },
       data: {
         nome,
-        metaHoras: metaHoras ? parseInt(metaHoras) : undefined, 
+        metaHoras: metaHoras ? parseInt(metaHoras) : undefined,
         qtdAlunos: qtdAlunos ? parseInt(qtdAlunos) : undefined,
         status,
-        coordenadorId: coordenadorId !== undefined ? coordenadorId : undefined
+        coordenadorId: coordenadorId !== undefined ? coordenadorId : undefined,
       },
     });
     res.json(cursoAtualizado);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Erro ao atualizar o curso. Verifique se o ID está correto." });
+    res
+      .status(500)
+      .json({
+        error: "Erro ao atualizar o curso. Verifique se o ID está correto.",
+      });
   }
 };
 
