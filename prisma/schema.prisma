@@ -11,9 +11,10 @@ model Usuario {
   id String @id @default(uuid())
   nome String
   email String @unique
+  senha     String
   status String @default("Ativo")
   createdAt DateTime @default(now())
-
+  tipo      String   // super-admin, coordenador, aluno
   cursoId   String?
   curso     Curso?   @relation("UsuariosDoCurso", fields: [cursoId], references: [id])
 
@@ -28,8 +29,23 @@ model Curso {
   status    String   @default("Ativo")
   createdAt DateTime @default(now())
 
-  coordenadorId String?
-  coordenador   Usuario? @relation("CoordenadorDoCurso", fields: [coordenadorId], references: [id])
+  usuarios       Usuario[] @relation("UsuariosDoCurso")
+  coordenadores  Usuario[] @relation("CoordenadorDoCurso")
 
-  usuarios Usuario[] @relation("UsuariosDoCurso")
+}
+
+model Regra {
+  id                         String   @id @default(uuid())
+  exigeAprovacaoCoordenador  Boolean  @default(false)
+  exigeCertificado           Boolean  @default(false)
+  createdAt                  DateTime @default(now())
+}
+
+model Limite {
+  id                 String   @id @default(uuid())
+  maxHorasPorPeriodo Int
+  ensino             Int
+  pesquisa           Int
+  extensao           Int
+  createdAt          DateTime @default(now())
 }
