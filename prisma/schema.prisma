@@ -8,30 +8,71 @@ datasource db {
 }
 
 model Usuario {
-  id String @id @default(uuid())
-  nome String
-  email String @unique
+  id        String   @id @default(uuid())
+  nome      String
+  email     String   @unique
   senha     String
-  status String @default("Ativo")
+  status    String   @default("Ativo")
   createdAt DateTime @default(now())
-  tipo      String   // super-admin, coordenador, aluno
+
+  tipo      TipoUsuario
+
   cursoId   String?
   curso     Curso?   @relation("UsuariosDoCurso", fields: [cursoId], references: [id])
 
   cursosCoordenados Curso[] @relation("CoordenadorDoCurso")
+
+  
+  aluno     Aluno?   @relation("UsuarioAluno")
 }
 
 model Curso {
   id        String   @id @default(uuid())
   nome      String
   metaHoras Int
-  qtdAlunos  Int
+  qtdAlunos Int
   status    String   @default("Ativo")
   createdAt DateTime @default(now())
 
   usuarios       Usuario[] @relation("UsuariosDoCurso")
   coordenadores  Usuario[] @relation("CoordenadorDoCurso")
 
+  alunos         Aluno[]
+}
+
+model Aluno {
+  id              String   @id @default(uuid())
+
+  usuarioId       String   @unique
+  usuario         Usuario  @relation("UsuarioAluno", fields: [usuarioId], references: [id])
+
+  cursoId         String
+  curso           Curso    @relation(fields: [cursoId], references: [id])
+
+  turma           Turma
+  periodo         Int
+  cargaExigida    Int
+
+  atividades      Atividade[]
+
+  createdAt       DateTime @default(now())
+}
+
+model Atividade {
+  id               String   @id @default(uuid())
+  titulo           String
+  categoria        Categoria
+  horas            Int
+  comprovante      String
+
+  alunoId          String
+  aluno            Aluno @relation(fields: [alunoId], references: [id])
+
+  status           Status   @default(PENDENTE)
+  horasAprovadas   Int?
+  feedback         String?
+
+  createdAt        DateTime @default(now())
 }
 
 model Regra {
@@ -48,4 +89,28 @@ model Limite {
   pesquisa           Int
   extensao           Int
   createdAt          DateTime @default(now())
+}
+
+enum TipoUsuario {
+  SUPER_ADMIN
+  COORDENADOR
+  ALUNO
+}
+
+enum Status {
+  PENDENTE
+  APROVADA
+  REJEITADA
+}
+
+enum Categoria {
+  ENSINO
+  PESQUISA
+  EXTENSAO
+}
+
+enum Turma {
+  TADS047
+  TADS048
+  TADS049
 }
