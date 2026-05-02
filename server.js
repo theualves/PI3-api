@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import bcrypt from 'bcrypt';
 
 import cursoRoutes from './src/routes/cursoRoutes.js';
 import usuarioRoutes from './src/routes/usuarioRoutes.js';
@@ -16,6 +15,12 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.get('/', (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    message: 'API de horas complementares online',
+  });
+});
 
 app.use('/api/cursos', cursoRoutes);
 app.use('/api/usuarios', usuarioRoutes);

@@ -1,10 +1,18 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import fs from "node:fs";
+import path from "node:path";
+import { prisma } from "../lib/prisma.js";
 
 export const criarAtividade = async (req, res) => {
   try {
+    const { titulo, categoria, horasSolicitadas, comprovante, alunoId } = req.body;
     const atividade = await prisma.atividade.create({
-      data: req.body
+      data: {
+        titulo,
+        categoria,
+        horasSolicitadas: Number(horasSolicitadas),
+        comprovante,
+        alunoId,
+      },
     });
 
     res.status(201).json(atividade);
@@ -14,23 +22,33 @@ export const criarAtividade = async (req, res) => {
 };
 
 export const listarAtividades = async (req, res) => {
-  const { cursoId, turma, categoria } = req.query;
+  const { cursoId, turma, categoria, status, nome, cpf } = req.query;
 
   const atividades = await prisma.atividade.findMany({
     where: {
       categoria: categoria || undefined,
+      status: status || undefined,
       aluno: {
         cursoId: cursoId || undefined,
-        turma: turma || undefined
-      }
+        turma: turma || undefined,
+        cpf: cpf ? { contains: cpf } : undefined,
+        usuario: {
+          nome: nome ? { contains: nome } : undefined,
+        },
+      },
     },
     include: {
       aluno: {
         include: {
-          usuario: true
-        }
-      }
-    }
+          usuario: true,
+          curso: true,
+        },
+      },
+      validadaPor: {
+        select: { id: true, nome: true, email: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
   });
 
   res.json(atividades);
@@ -38,12 +56,59 @@ export const listarAtividades = async (req, res) => {
 
 export const validarAtividade = async (req, res) => {
   const { id } = req.params;
-  const { status, horasAprovadas, feedback } = req.body;
+  const { status, horasAprovadas, motivo, validadorId } = req.body;
 
   const atividade = await prisma.atividade.update({
     where: { id },
-    data: { status, horasAprovadas, feedback }
+    data: {
+      status,
+      horasAprovadas: status === "APROVADA" ? Number(horasAprovadas || 0) : 0,
+      motivo: motivo || null,
+      validadaPorId: validadorId || null,
+      validadaEm: new Date(),
+    },
+    include: {
+      aluno: {
+        include: {
+          usuario: true,
+        },
+      },
+      validadaPor: {
+        select: { nome: true, email: true },
+      },
+    },
   });
 
   res.json(atividade);
+};
+export const baixarComprovante = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const atividade = await prisma.atividade.findUnique({
+      where: { id },
+      select: { comprovante: true },
+    });
+
+    if (!atividade) {
+      return res.status(404).json({ error: "Atividade não encontrada." });
+    }
+
+    if (atividade.comprovante.startsWith("http://") || atividade.comprovante.startsWith("https://")) {
+      return res.json({ url: atividade.comprovante });
+    }
+
+    const caminhoAbsoluto = path.isAbsolute(atividade.comprovante)
+      ? atividade.comprovante
+      : path.resolve(process.cwd(), atividade.comprovante);
+
+    if (!fs.existsSync(caminhoAbsoluto)) {
+      return res.status(404).json({ error: "Comprovante não encontrado no servidor." });
+    }
+
+    return res.download(caminhoAbsoluto);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Erro ao baixar comprovante." });
+  }
 };

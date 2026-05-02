@@ -1,34 +1,32 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma.js";
 
 export const salvarLimite = async (req, res) => {
-  const { maxHorasPorPeriodo, ensino, pesquisa, extensao } = req.body;
+  const { cursoId, periodo, maxHorasPorPeriodo, ensino, pesquisa, extensao } = req.body;
 
   try {
-    const existente = await prisma.limite.findFirst();
-
-    let limite;
-
-    if (existente) {
-      limite = await prisma.limite.update({
-        where: { id: existente.id },
-        data: {
-          maxHorasPorPeriodo: parseInt(maxHorasPorPeriodo),
-          ensino: parseInt(ensino),
-          pesquisa: parseInt(pesquisa),
-          extensao: parseInt(extensao)
-        }
-      });
-    } else {
-      limite = await prisma.limite.create({
-        data: {
-          maxHorasPorPeriodo: parseInt(maxHorasPorPeriodo),
-          ensino: parseInt(ensino),
-          pesquisa: parseInt(pesquisa),
-          extensao: parseInt(extensao)
-        }
-      });
-    }
+    const limite = await prisma.limite.upsert({
+      where: {
+        cursoId_periodo: {
+          cursoId,
+          periodo: Number(periodo),
+        },
+      },
+      update: {
+        maxHorasPorPeriodo: Number(maxHorasPorPeriodo),
+        ensino: Number(ensino),
+        pesquisa: Number(pesquisa),
+        extensao: Number(extensao),
+      },
+      create: {
+        cursoId,
+        periodo: Number(periodo),
+        maxHorasPorPeriodo: Number(maxHorasPorPeriodo),
+        ensino: Number(ensino),
+        pesquisa: Number(pesquisa),
+        extensao: Number(extensao),
+      },
+      include: { curso: true },
+    });
 
     res.json(limite);
   } catch (error) {
@@ -39,7 +37,15 @@ export const salvarLimite = async (req, res) => {
 
 export const buscarLimite = async (req, res) => {
   try {
-    const limite = await prisma.limite.findFirst();
+    const { cursoId, periodo } = req.query;
+    const limite = await prisma.limite.findMany({
+      where: {
+        cursoId: cursoId || undefined,
+        periodo: periodo ? Number(periodo) : undefined,
+      },
+      include: { curso: true },
+      orderBy: [{ periodo: "desc" }, { createdAt: "desc" }],
+    });
     res.json(limite);
   } catch (error) {
     console.error(error);

@@ -18,30 +18,28 @@ model Usuario {
   tipo      TipoUsuario
 
   cursoId   String?
-  curso     Curso?   @relation("UsuariosDoCurso", fields: [cursoId], references: [id])
-
-  cursosCoordenados Curso[] @relation("CoordenadorDoCurso")
-
-  
+  curso     Curso?   @relation("CursoUsuarios", fields: [cursoId], references: [id])
   aluno     Aluno?   @relation("UsuarioAluno")
+  atividadesValidadas Atividade[] @relation("ValidadorAtividade")
 }
 
 model Curso {
   id        String   @id @default(uuid())
-  nome      String
-  metaHoras Int
-  qtdAlunos Int
+  nome      String   @unique
+  categoria String
+  tipoCurso String
+  duracao   String
+  cargaHoraria Int
   status    String   @default("Ativo")
   createdAt DateTime @default(now())
-
-  usuarios       Usuario[] @relation("UsuariosDoCurso")
-  coordenadores  Usuario[] @relation("CoordenadorDoCurso")
-
+  usuarios       Usuario[] @relation("CursoUsuarios")
   alunos         Aluno[]
+  limites        Limite[]
 }
 
 model Aluno {
   id              String   @id @default(uuid())
+  cpf             String   @unique
 
   usuarioId       String   @unique
   usuario         Usuario  @relation("UsuarioAluno", fields: [usuarioId], references: [id])
@@ -62,7 +60,7 @@ model Atividade {
   id               String   @id @default(uuid())
   titulo           String
   categoria        Categoria
-  horas            Int
+  horasSolicitadas Int
   comprovante      String
 
   alunoId          String
@@ -70,30 +68,41 @@ model Atividade {
 
   status           Status   @default(PENDENTE)
   horasAprovadas   Int?
-  feedback         String?
+  motivo           String?
+  validadaPorId    String?
+  validadaPor      Usuario? @relation("ValidadorAtividade", fields: [validadaPorId], references: [id])
+  validadaEm       DateTime?
 
   createdAt        DateTime @default(now())
 }
 
 model Regra {
   id                         String   @id @default(uuid())
-  exigeAprovacaoCoordenador  Boolean  @default(false)
+  verificaCoordenador        Boolean  @default(false)
   exigeCertificado           Boolean  @default(false)
+  descricao                  String?
   createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
 }
 
 model Limite {
   id                 String   @id @default(uuid())
+  cursoId            String
+  curso              Curso    @relation(fields: [cursoId], references: [id])
+  periodo            Int
   maxHorasPorPeriodo Int
   ensino             Int
   pesquisa           Int
   extensao           Int
   createdAt          DateTime @default(now())
+
+  @@unique([cursoId, periodo])
 }
 
 enum TipoUsuario {
   SUPER_ADMIN
   COORDENADOR
+  GESTOR
   ALUNO
 }
 
