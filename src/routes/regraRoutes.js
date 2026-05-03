@@ -1,5 +1,5 @@
 import express from "express";
-import { salvarRegra, buscarRegra } from "../controllers/regraController.js";
+import { salvarRegra, buscarRegra } from "../controllers/RegraController.js";
 
 const router = express.Router();
 

@@ -1,5 +1,5 @@
 import express from "express";
-import { salvarLimite, buscarLimite } from "../controllers/limiteController.js";
+import { salvarLimite, buscarLimite } from "../controllers/LimiteController.js";
 
 const router = express.Router();
 
