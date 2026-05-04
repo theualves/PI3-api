@@ -7,6 +7,11 @@ import cursoRoutes from './src/routes/cursoRoutes.js';
 import usuarioRoutes from './src/routes/usuarioRoutes.js';
 import limiteRoutes from './src/routes/limiteRoutes.js';
 import regraRoutes from './src/routes/regraRoutes.js';
+import authRoutes from './src/routes/authRoutes.js';
+import atividadeRoutes from './src/routes/atividadeRoutes.js';
+import alunoPortalRoutes from './src/routes/alunoPortalRoutes.js';
+import alunoCoordenadorRoutes from './src/routes/alunoCoordenadorRoutes.js';
+import relatorioRoutes from './src/routes/relatorioRoutes.js';
 
 
 const app = express();
@@ -20,6 +25,11 @@ app.use('/api/cursos', cursoRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/limite', limiteRoutes);
 app.use('/api/regra', regraRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/atividades', atividadeRoutes);
+app.use('/api/aluno-portal', alunoPortalRoutes);
+app.use('/api/aluno-coordenador', alunoCoordenadorRoutes);
+app.use('/api/relatorios', relatorioRoutes);
 app.get('/health', async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
