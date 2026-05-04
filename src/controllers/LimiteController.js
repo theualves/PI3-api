@@ -1,54 +1,81 @@
 import { prisma } from "../lib/prisma.js";
+import { toInt, sendValidationError } from "../utils/validation.js";
+import { handleControllerError } from "../utils/apiErrors.js";
 
 export const salvarLimite = async (req, res) => {
-  const { cursoId, periodo, maxHorasPorPeriodo, ensino, pesquisa, extensao } = req.body;
+  const { maxHorasPorPeriodo, ensino, pesquisa, extensao } = req.body;
+  const maxHorasPorPeriodoInt = toInt(maxHorasPorPeriodo);
+  const ensinoInt = toInt(ensino);
+  const pesquisaInt = toInt(pesquisa);
+  const extensaoInt = toInt(extensao);
+
+  const validationErrors = [];
+  if (maxHorasPorPeriodoInt === null || maxHorasPorPeriodoInt < 0) {
+    validationErrors.push({
+      field: "maxHorasPorPeriodo",
+      message: "Informe um inteiro válido (>= 0).",
+    });
+  }
+  if (ensinoInt === null || ensinoInt < 0) {
+    validationErrors.push({
+      field: "ensino",
+      message: "Informe um inteiro válido (>= 0).",
+    });
+  }
+  if (pesquisaInt === null || pesquisaInt < 0) {
+    validationErrors.push({
+      field: "pesquisa",
+      message: "Informe um inteiro válido (>= 0).",
+    });
+  }
+  if (extensaoInt === null || extensaoInt < 0) {
+    validationErrors.push({
+      field: "extensao",
+      message: "Informe um inteiro válido (>= 0).",
+    });
+  }
+
+  if (validationErrors.length > 0) {
+    return sendValidationError(res, validationErrors);
+  }
 
   try {
-    const limite = await prisma.limite.upsert({
-      where: {
-        cursoId_periodo: {
-          cursoId,
-          periodo: Number(periodo),
+    const existente = await prisma.limite.findFirst();
+
+    let limite;
+
+    if (existente) {
+      limite = await prisma.limite.update({
+        where: { id: existente.id },
+        data: {
+          maxHorasPorPeriodo: maxHorasPorPeriodoInt,
+          ensino: ensinoInt,
+          pesquisa: pesquisaInt,
+          extensao: extensaoInt,
         },
-      },
-      update: {
-        maxHorasPorPeriodo: Number(maxHorasPorPeriodo),
-        ensino: Number(ensino),
-        pesquisa: Number(pesquisa),
-        extensao: Number(extensao),
-      },
-      create: {
-        cursoId,
-        periodo: Number(periodo),
-        maxHorasPorPeriodo: Number(maxHorasPorPeriodo),
-        ensino: Number(ensino),
-        pesquisa: Number(pesquisa),
-        extensao: Number(extensao),
-      },
-      include: { curso: true },
-    });
+      });
+    } else {
+      limite = await prisma.limite.create({
+        data: {
+          maxHorasPorPeriodo: maxHorasPorPeriodoInt,
+          ensino: ensinoInt,
+          pesquisa: pesquisaInt,
+          extensao: extensaoInt,
+        },
+      });
+    }
 
     res.json(limite);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erro ao salvar limite." });
+    return handleControllerError(res, error, "Erro ao salvar limite.");
   }
 };
 
 export const buscarLimite = async (req, res) => {
   try {
-    const { cursoId, periodo } = req.query;
-    const limite = await prisma.limite.findMany({
-      where: {
-        cursoId: cursoId || undefined,
-        periodo: periodo ? Number(periodo) : undefined,
-      },
-      include: { curso: true },
-      orderBy: [{ periodo: "desc" }, { createdAt: "desc" }],
-    });
-    res.json(limite);
+    const limite = await prisma.limite.findFirst();
+    res.json(limite || null);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erro ao buscar limite." });
+    return handleControllerError(res, error, "Erro ao buscar limite.");
   }
 };
