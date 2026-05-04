@@ -5,7 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev:mysql": "prisma generate && prisma db push",
+    "dev:mysql": "prisma generate",
     "dev": "npm run dev:mysql && node server.js",
     "start": "node server.js",
     "migrate:dev": "prisma migrate dev",

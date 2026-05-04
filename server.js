@@ -9,6 +9,7 @@ import regraRoutes from './src/routes/regraRoutes.js';
 import alunoCoordenadorRoutes from './src/routes/alunoCoordenadorRoutes.js'
 import atividadeRoutes from './src/routes/atividadeRoutes.js'
 import relatorioRoutes from './src/routes/relatorioRoutes.js'
+import alunoPortalRoutes from "./src/routes/alunoPortalRoutes.js";
 
 
 const app = express();
@@ -29,5 +30,6 @@ app.use('/api/regra', regraRoutes);
 app.use('/api/aluno_coordenador', alunoCoordenadorRoutes);
 app.use('/api/atividades', atividadeRoutes)
 app.use('/api/relatorio', relatorioRoutes )
+app.use('/api/aluno', alunoPortalRoutes);
 
 app.listen(3001, () => console.log(`Api rodando no http://localhost:${3001}`));

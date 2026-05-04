@@ -15,74 +15,82 @@ model Usuario {
   status    String   @default("Ativo")
   createdAt DateTime @default(now())
 
-  tipo      TipoUsuario
+  tipo TipoUsuario
 
-  cursoId   String?
-  curso     Curso?   @relation("CursoUsuarios", fields: [cursoId], references: [id])
-  aluno     Aluno?   @relation("UsuarioAluno")
+  cursoId             String?
+  curso               Curso?      @relation("CursoUsuarios", fields: [cursoId], references: [id])
+  aluno               Aluno?      @relation("UsuarioAluno")
   atividadesValidadas Atividade[] @relation("ValidadorAtividade")
 }
 
 model Curso {
-  id        String   @id @default(uuid())
-  nome      String   @unique
-  categoria String
-  tipoCurso String
-  duracao   String
+  id           String   @id @default(uuid())
+  nome         String   @unique
+  categoria    String
+  tipoCurso    String
+  duracao      String
   cargaHoraria Int
-  status    String   @default("Ativo")
-  createdAt DateTime @default(now())
-  usuarios       Usuario[] @relation("CursoUsuarios")
-  alunos         Aluno[]
-  limites        Limite[]
+  status       String   @default("Ativo")
+  createdAt    DateTime @default(now())
+
+  usuarios Usuario[] @relation("CursoUsuarios")
+
+  alunos Aluno[] @relation("CursoAlunos") // 👈 CORREÇÃO AQUI
+
+  limites Limite[]
 }
 
 model Aluno {
-  id              String   @id @default(uuid())
-  cpf             String   @unique
+  id  String @id @default(uuid())
+  cpf String @unique
 
-  usuarioId       String   @unique
-  usuario         Usuario  @relation("UsuarioAluno", fields: [usuarioId], references: [id])
+  usuarioId String  @unique
+  usuario   Usuario @relation("UsuarioAluno", fields: [usuarioId], references: [id])
 
-  cursoId         String
-  curso           Curso    @relation(fields: [cursoId], references: [id])
+  cursoId String
+  curso   Curso  @relation("CursoAlunos", fields: [cursoId], references: [id]) // 👈 AQUI
 
-  turma           Turma
-  periodo         Int
-  cargaExigida    Int
+  turma        Turma
+  periodo      Int
+  cargaExigida Int
 
-  atividades      Atividade[]
+  atividades Atividade[]
 
-  createdAt       DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Atividade {
-  id               String   @id @default(uuid())
-  titulo           String
-  categoria        Categoria
-  horasSolicitadas Int
-  comprovante      String
+  id                     String    @id @default(uuid())
+  titulo                 String
+  descricao              String?
+  categoria              Categoria
+  dataInicio             DateTime?
+  horasSolicitadas       Int
+  comprovante            String
+  nomeArquivoComprovante String?
+  mimeTypeComprovante    String?
+  tamanhoComprovante     Int?
 
-  alunoId          String
-  aluno            Aluno @relation(fields: [alunoId], references: [id])
+  alunoId String
+  aluno   Aluno  @relation(fields: [alunoId], references: [id])
 
-  status           Status   @default(PENDENTE)
-  horasAprovadas   Int?
-  motivo           String?
-  validadaPorId    String?
-  validadaPor      Usuario? @relation("ValidadorAtividade", fields: [validadaPorId], references: [id])
-  validadaEm       DateTime?
+  status         Status    @default(PENDENTE)
+  horasAprovadas Int?
+  motivo         String?
+  validadaPorId  String?
+  validadaPor    Usuario?  @relation("ValidadorAtividade", fields: [validadaPorId], references: [id])
+  validadaEm     DateTime?
 
-  createdAt        DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Regra {
-  id                         String   @id @default(uuid())
-  verificaCoordenador        Boolean  @default(false)
-  exigeCertificado           Boolean  @default(false)
-  descricao                  String?
-  createdAt                  DateTime @default(now())
-  updatedAt                  DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  verificaCoordenador Boolean  @default(false)
+  exigeCertificado    Boolean  @default(false)
+  descricao           String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model Limite {
