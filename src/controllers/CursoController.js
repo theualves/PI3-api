@@ -29,23 +29,17 @@ export const listarCursos = async (req, res) => {
 };
 
 export const criarCurso = async (req, res) => {
-  const { nome, categoria, tipoCurso, duracao, cargaHoraria, status } = req.body;
+  // 1. Recebe exatamente o que o seu FRONT-END envia
+  const { nome, tipoFormacao, metaHoras, statusInicial } = req.body;
 
   const validationErrors = [];
   if (!isNonEmptyString(nome)) {
     validationErrors.push({ field: "nome", message: "Nome é obrigatório." });
   }
-  if (!isNonEmptyString(categoria)) {
-    validationErrors.push({ field: "categoria", message: "Categoria é obrigatória." });
-  }
-  
-  // Tratando cargaHoraria como a "Meta de Horas" do sistema
-  const cargaHorariaInt = toInt(cargaHoraria);
-  if (cargaHorariaInt === null || cargaHorariaInt < 0) {
-    validationErrors.push({
-      field: "cargaHoraria",
-      message: "Informe a carga horária (meta de horas) válida.",
-    });
+
+  const metaInt = toInt(metaHoras);
+  if (metaInt === null || metaInt < 0) {
+    validationErrors.push({ field: "metaHoras", message: "Informe uma meta de horas válida." });
   }
 
   if (validationErrors.length > 0) {
@@ -56,16 +50,19 @@ export const criarCurso = async (req, res) => {
     const novoCurso = await prisma.curso.create({
       data: {
         nome: nome.trim(),
-        categoria: isNonEmptyString(categoria) ? categoria.trim() : "Geral",
-        tipoCurso: isNonEmptyString(tipoCurso) ? tipoCurso.trim() : "Bacharelado",
-        duracao: isNonEmptyString(duracao) ? duracao.trim() : "N/A",
-        cargaHoraria: cargaHorariaInt,
-        status: isNonEmptyString(status) ? status.trim() : "Ativo",
+        // Mapeando para os campos obrigatórios do seu SCHEMA atualizado:
+        metaHoras: metaInt,
+        tipoCurso: tipoFormacao || "Superior",
+        status: statusInicial || "Ativo",
+        categoria: "Geral", // Obrigatório no seu model
+        duracao: "N/A",    // Obrigatório no seu model
       },
     });
     res.status(201).json(novoCurso);
   } catch (error) {
-    return handleControllerError(res, error, "Erro ao salvar curso. Verifique se o nome já existe.");
+    // Se der erro, veremos exatamente o que o Prisma reclamou no terminal
+    console.error("ERRO PRISMA:", error);
+    return handleControllerError(res, error, "Dados inválidos para consulta/registro.");
   }
 };
 
