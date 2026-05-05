@@ -31,7 +31,7 @@ model Curso {
   categoria    String
   tipoCurso    String
   duracao      String
-  cargaHoraria Int
+  metaHoras Int
   status       String   @default("Ativo")
   createdAt    DateTime @default(now())
 

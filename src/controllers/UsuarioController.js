@@ -41,14 +41,16 @@ export const criarUsuario = async (req, res) => {
       data: {
         nome: nome.trim(),
         email: email.trim(),
-        senha: senha.trim(),
-        tipo: tipo.trim(),
-        cursoId: isNonEmptyString(cursoId) ? cursoId.trim() : null,
+        senha: senha.trim(), // Recomendo usar bcrypt.hash futuramente
+        tipo: tipo.trim(), // Deve ser 'gestor', 'coordenador', etc.
+        // Se for gestor, cursoId DEVE ser null
+        cursoId:
+          tipo === "gestor"
+            ? null
+            : isNonEmptyString(cursoId)
+              ? cursoId.trim()
+              : null,
         status: isNonEmptyString(status) ? status.trim() : "Ativo",
-      },
-      include: {
-        curso: true,
-        cursosCoordenados: true,
       },
     });
     res.status(201).json(novoUsuario);
@@ -73,7 +75,9 @@ export const recuperarSenha = async (req, res) => {
     });
   }
 
-  const tipoNormalizado = isNonEmptyString(tipo) ? tipo.trim().toLowerCase() : "";
+  const tipoNormalizado = isNonEmptyString(tipo)
+    ? tipo.trim().toLowerCase()
+    : "";
 
   if (tipoNormalizado === "aluno" && !isNonEmptyString(matricula)) {
     validationErrors.push({

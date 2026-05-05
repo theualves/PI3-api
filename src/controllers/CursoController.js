@@ -16,15 +16,7 @@ export const listarCursos = async (req, res) => {
         status: isNonEmptyString(status) ? status.trim() : undefined,
       },
       include: {
-        coordenadores: {
-          select: { id: true, nome: true, email: true, tipo: true, status: true },
-        },
         usuarios: {
-          select: { id: true, nome: true, email: true, tipo: true, status: true },
-        },
-      },
-      include: {
-        coordenadores: {
           select: { id: true, nome: true, email: true, tipo: true, status: true },
         },
       },
@@ -37,176 +29,83 @@ export const listarCursos = async (req, res) => {
 };
 
 export const criarCurso = async (req, res) => {
-  const { nome, metaHoras, qtdAlunos, status, coordenadorIds } = req.body;
+  const { nome, categoria, tipoCurso, duracao, cargaHoraria, status } = req.body;
 
   const validationErrors = [];
   if (!isNonEmptyString(nome)) {
-    validationErrors.push({ field: "nome", message: "Campo obrigatório." });
+    validationErrors.push({ field: "nome", message: "Nome é obrigatório." });
   }
-
-  const metaHorasInt = toInt(metaHoras);
-  if (metaHorasInt === null || metaHorasInt < 0) {
+  if (!isNonEmptyString(categoria)) {
+    validationErrors.push({ field: "categoria", message: "Categoria é obrigatória." });
+  }
+  
+  // Tratando cargaHoraria como a "Meta de Horas" do sistema
+  const cargaHorariaInt = toInt(cargaHoraria);
+  if (cargaHorariaInt === null || cargaHorariaInt < 0) {
     validationErrors.push({
-      field: "metaHoras",
-      message: "Informe um número inteiro válido (>= 0).",
+      field: "cargaHoraria",
+      message: "Informe a carga horária (meta de horas) válida.",
     });
-  }
-
-  const qtdAlunosInt = toInt(qtdAlunos);
-  if (qtdAlunosInt === null || qtdAlunosInt < 0) {
-    validationErrors.push({
-      field: "qtdAlunos",
-      message: "Informe um número inteiro válido (>= 0).",
-    });
-  }
-
-  let coordenadorIdsNormalizado;
-  if (coordenadorIds !== undefined) {
-    coordenadorIdsNormalizado = toStringArray(coordenadorIds);
-    if (coordenadorIdsNormalizado === null) {
-      validationErrors.push({
-        field: "coordenadorIds",
-        message: "Envie um array de IDs de coordenadores.",
-      });
-    }
   }
 
   if (validationErrors.length > 0) {
     return sendValidationError(res, validationErrors);
   }
+
   try {
     const novoCurso = await prisma.curso.create({
       data: {
         nome: nome.trim(),
-        metaHoras: metaHorasInt,
-        qtdAlunos: qtdAlunosInt,
+        categoria: isNonEmptyString(categoria) ? categoria.trim() : "Geral",
+        tipoCurso: isNonEmptyString(tipoCurso) ? tipoCurso.trim() : "Bacharelado",
+        duracao: isNonEmptyString(duracao) ? duracao.trim() : "N/A",
+        cargaHoraria: cargaHorariaInt,
         status: isNonEmptyString(status) ? status.trim() : "Ativo",
-        coordenadores:
-          coordenadorIdsNormalizado && coordenadorIdsNormalizado.length > 0
-            ? {
-                connect: coordenadorIdsNormalizado.map((id) => ({ id })),
-              }
-            : undefined,
       },
     });
     res.status(201).json(novoCurso);
   } catch (error) {
-    return handleControllerError(res, error, "Erro ao salvar curso no banco.");
+    return handleControllerError(res, error, "Erro ao salvar curso. Verifique se o nome já existe.");
   }
 };
 
 export const editarCurso = async (req, res) => {
   const { id } = req.params;
-  const { nome, metaHoras, qtdAlunos, status, coordenadorIds } = req.body;
+  const { nome, categoria, tipoCurso, duracao, cargaHoraria, status } = req.body;
 
   if (!isNonEmptyString(id)) {
-    return sendValidationError(res, [
-      { field: "id", message: "ID do curso é obrigatório." },
-    ]);
+    return sendValidationError(res, [{ field: "id", message: "ID obrigatório." }]);
   }
 
   const data = {};
-  const validationErrors = [];
+  if (nome) data.nome = nome.trim();
+  if (categoria) data.categoria = categoria.trim();
+  if (tipoCurso) data.tipoCurso = tipoCurso.trim();
+  if (duracao) data.duracao = duracao.trim();
+  if (cargaHoraria) data.cargaHoraria = toInt(cargaHoraria);
+  if (status) data.status = status.trim();
 
-  if (nome !== undefined) {
-    if (!isNonEmptyString(nome)) {
-      validationErrors.push({ field: "nome", message: "Campo inválido." });
-    } else {
-      data.nome = nome.trim();
-    }
-  }
-
-  if (metaHoras !== undefined) {
-    const parsed = toInt(metaHoras);
-    if (parsed === null || parsed < 0) {
-      validationErrors.push({
-        field: "metaHoras",
-        message: "Informe um inteiro válido (>= 0).",
-      });
-    } else {
-      data.metaHoras = parsed;
-    }
-  }
-
-  if (qtdAlunos !== undefined) {
-    const parsed = toInt(qtdAlunos);
-    if (parsed === null || parsed < 0) {
-      validationErrors.push({
-        field: "qtdAlunos",
-        message: "Informe um inteiro válido (>= 0).",
-      });
-    } else {
-      data.qtdAlunos = parsed;
-    }
-  }
-
-  if (status !== undefined) {
-    if (!isNonEmptyString(status)) {
-      validationErrors.push({
-        field: "status",
-        message: "Informe um status válido.",
-      });
-    } else {
-      data.status = status.trim();
-    }
-  }
-
-  if (coordenadorIds !== undefined) {
-    const ids = toStringArray(coordenadorIds);
-    if (ids === null) {
-      validationErrors.push({
-        field: "coordenadorIds",
-        message: "Envie um array de IDs de coordenadores.",
-      });
-    } else {
-      data.coordenadores = { set: ids.map((coordenadorId) => ({ id: coordenadorId })) };
-    }
-  }
-
-  if (Object.keys(data).length === 0) {
-    validationErrors.push({
-      field: "body",
-      message: "Envie ao menos um campo para atualizar.",
-    });
-  }
-
-  if (validationErrors.length > 0) {
-    return sendValidationError(res, validationErrors);
-  }
   try {
     const cursoAtualizado = await prisma.curso.update({
       where: { id: id.trim() },
       data,
-      include: {
-        coordenadores: {
-          select: { id: true, nome: true, email: true, tipo: true, status: true },
-        },
-      },
     });
     res.json(cursoAtualizado);
   } catch (error) {
-    return handleControllerError(
-      res,
-      error,
-      "Erro ao atualizar o curso. Verifique os dados enviados."
-    );
+    return handleControllerError(res, error, "Erro ao atualizar o curso.");
   }
 };
 
 export const excluirCurso = async (req, res) => {
   const { id } = req.params;
-  if (!isNonEmptyString(id)) {
-    return sendValidationError(res, [
-      { field: "id", message: "ID do curso é obrigatório." },
-    ]);
-  }
-
   try {
-    await prisma.curso.delete({
-      where: { id: id.trim() },
-    });
+    await prisma.curso.delete({ where: { id: id.trim() } });
     res.json({ message: "Curso excluído com sucesso!" });
   } catch (error) {
     return handleControllerError(res, error, "Erro ao excluir o curso.");
   }
+};
+
+export const opcoesFiltros = async (req, res) => {
+  res.json({ status: ["Ativo", "Inativo"], tipos: ["Superior", "Técnico", "Extensão"] });
 };
